@@ -25,8 +25,8 @@ jobs:
 
       - name: Run monitor script
         env:
-          TARGET_OWNER: 'w3c' # ← editar
-          TARGET_REPO: 'wcag' # ← editar
+          TARGET_OWNER: 'CyberKen10' # ← editar
+          TARGET_REPO: 'commit-watcher-agent' # ← editar
           GITHUB_TOKEN_CUSTOM: ${{ secrets.G_TOKEN_CUSTOM }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
