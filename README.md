@@ -30,7 +30,7 @@ El proyecto ya viene preparado para usar **Gmail SMTP**:
 
 Configura estos *Repository secrets* en GitHub:
 
-- `GITHUB_TOKEN_CUSTOM`
+- `GH_TOKEN_CUSTOM`
 - `OPENAI_API_KEY`
 - `EMAIL_PASSWORD`  ← App Password de Gmail
 
@@ -50,7 +50,7 @@ Y ajusta en el workflow:
 pip install requests
 export TARGET_OWNER="owner_del_repo_publico"
 export TARGET_REPO="nombre_del_repo_publico"
-export GITHUB_TOKEN_CUSTOM="..."
+export GH_TOKEN_CUSTOM="..."
 export OPENAI_API_KEY="..."
 export EMAIL_PASSWORD="app_password_de_gmail"
 # opcional:

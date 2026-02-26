@@ -23,14 +23,28 @@ jobs:
       - name: Install deps
         run: pip install requests
 
+      - name: Debug secret/env availability
+        env:
+          GH_TOKEN_CUSTOM: ${{ secrets.GH_TOKEN_CUSTOM }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO_LIST: ${{ secrets.EMAIL_TO_LIST }}
+        run: |
+          echo "GH_TOKEN_CUSTOM set? $([ -n "$GH_TOKEN_CUSTOM" ] && echo yes || echo no)"
+          echo "OPENAI_API_KEY set? $([ -n "$OPENAI_API_KEY" ] && echo yes || echo no)"
+          echo "EMAIL_USERNAME set? $([ -n "$EMAIL_USERNAME" ] && echo yes || echo no)"
+          echo "EMAIL_PASSWORD set? $([ -n "$EMAIL_PASSWORD" ] && echo yes || echo no)"
+          echo "EMAIL_TO_LIST set? $([ -n "$EMAIL_TO_LIST" ] && echo yes || echo no)"
+
       - name: Run monitor script
         env:
           TARGET_OWNER: 'CyberKen10' # ← editar
           TARGET_REPO: 'commit-watcher-agent' # ← editar
-          GITHUB_TOKEN_CUSTOM: ${{ secrets.G_TOKEN_CUSTOM }}
+          GH_TOKEN_CUSTOM: ${{ secrets.GH_TOKEN_CUSTOM }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_TO_LIST: 'kendryjavierdelpino@gmail.com' # o poner en secret
+          EMAIL_TO_LIST: ${{ secrets.EMAIL_TO_LIST }}
         run: |
           python3 scripts/check_and_notify.py
