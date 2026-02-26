@@ -8,7 +8,7 @@ from email.message import EmailMessage
 
 OWNER = os.environ.get("TARGET_OWNER")  # dueño del repo público
 REPO = os.environ.get("TARGET_REPO")  # nombre repo público
-GITHUB_TOKEN = os.environ["G_TOKEN_CUSTOM"]
+GITHUB_TOKEN = os.environ["GITHUB_TOKEN_CUSTOM"]
 OPENAI_KEY = os.environ["OPENAI_API_KEY"]
 
 GMAIL_SMTP_HOST = "smtp.gmail.com"
