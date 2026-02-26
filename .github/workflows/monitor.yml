@@ -4,7 +4,10 @@ on:
   schedule:
     - cron: '*/15 * * * *' # cada 15 minutos (ajusta si quieres)
   workflow_dispatch:
-
+  
+permissions:
+  contents: read
+  
 jobs:
   check-commit:
     runs-on: ubuntu-latest
