@@ -1,8 +1,18 @@
 # Cómo probar el commit watcher
 
-Este documento explica cómo validar que el monitor funciona correctamente.
+Este documento explica cómo validar que el monitor funciona correctamente con **Gmail SMTP**.
 
-## 1) Prueba local (sin enviar correo real)
+## 0) Requisito obligatorio para Gmail
+
+Antes de probar envío de correo:
+
+1. Activa 2FA en Google.
+2. Crea un **App Password** de Gmail (16 caracteres).
+3. Usa ese valor en `EMAIL_PASSWORD`.
+
+> Gmail normalmente bloquea usuario+contraseña normal en SMTP; usa App Password.
+
+## 1) Prueba local del monitor
 
 Instala dependencias:
 
@@ -10,16 +20,17 @@ Instala dependencias:
 pip install requests
 ```
 
-Configura variables mínimas para consultar commits y generar resumen:
+Configura variables mínimas:
 
 ```bash
 export TARGET_OWNER="owner_del_repo_publico"
 export TARGET_REPO="nombre_del_repo_publico"
 export GITHUB_TOKEN_CUSTOM="tu_token_github"
 export OPENAI_API_KEY="tu_openai_api_key"
+export EMAIL_PASSWORD="tu_app_password_de_gmail"
+# opcional: export EMAIL_USERNAME="kendryjavierdelpino@gmail.com"
+# opcional: export EMAIL_TO_LIST="destino1@correo.com,destino2@correo.com"
 ```
-
-Opcionalmente evita envío real de email **no** configurando `EMAIL_USERNAME`/`EMAIL_PASSWORD`.
 
 Ejecuta:
 
@@ -31,14 +42,15 @@ Resultado esperado:
 
 - Si hay commit nuevo: imprime `Nuevo commit detectado`, genera resumen y guarda SHA en `last_sha.txt`.
 - Si no hay commit nuevo: imprime `No hay commits nuevos`.
+- Si falta `EMAIL_PASSWORD`: imprime aviso y salta el envío.
 
-## 2) Prueba de envío de correo (SMTP)
+## 2) Prueba directa de envío de correo (SMTP Gmail)
 
 Configura:
 
 ```bash
-export EMAIL_USERNAME="tu_correo"
-export EMAIL_PASSWORD="tu_password_o_app_password"
+export EMAIL_USERNAME="kendryjavierdelpino@gmail.com"
+export EMAIL_PASSWORD="tu_app_password_de_gmail"
 export EMAIL_TO_LIST="destino1@correo.com,destino2@correo.com"
 ```
 
@@ -56,14 +68,15 @@ Resultado esperado: llega un correo con el asunto y contenido indicados.
 2. En GitHub, configura estos **Repository secrets**:
    - `GITHUB_TOKEN_CUSTOM`
    - `OPENAI_API_KEY`
-   - `EMAIL_USERNAME`
-   - `EMAIL_PASSWORD`
-3. Edita `.github/workflows/monitor.yml` si necesitas cambiar:
+   - `EMAIL_PASSWORD` (App Password)
+3. Opcionalmente agrega:
+   - `EMAIL_USERNAME` (si quieres otro remitente)
+   - `EMAIL_TO_LIST`
+4. Edita `.github/workflows/monitor.yml` si necesitas cambiar:
    - `TARGET_OWNER`
    - `TARGET_REPO`
-   - `EMAIL_TO_LIST`
-4. Ve a **Actions** → workflow **Monitor public repo and send commit summary**.
-5. Ejecuta **Run workflow** manualmente.
+5. Ve a **Actions** → workflow **Monitor public repo and send commit summary**.
+6. Ejecuta **Run workflow** manualmente.
 
 Resultado esperado: el job finaliza en verde y el script procesa el commit nuevo (si existe) y envía notificación por correo.
 
@@ -84,5 +97,5 @@ cat last_sha.txt
 
 - **401/403 GitHub API**: revisa `GITHUB_TOKEN_CUSTOM` y permisos.
 - **401 OpenAI**: verifica `OPENAI_API_KEY`.
-- **SMTP auth failed**: en Gmail suele requerirse **App Password** y 2FA.
+- **SMTP auth failed**: revisa que `EMAIL_PASSWORD` sea App Password de Gmail y que 2FA esté activa.
 - **No llega correo**: revisa spam, dominio permitido y formato de `EMAIL_TO_LIST`.
