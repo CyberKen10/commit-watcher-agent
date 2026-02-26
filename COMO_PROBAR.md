@@ -78,7 +78,7 @@ Resultado esperado: llega un correo con el asunto y contenido indicados.
 5. Ve a **Actions** → workflow **Monitor public repo and send commit summary**.
 6. Ejecuta **Run workflow** manualmente.
 
-Resultado esperado: el job finaliza en verde y el script procesa el commit nuevo (si existe) y envía notificación por correo.
+Resultado esperado: el job finaliza en verde, el script procesa el commit nuevo (si existe), envía notificación por correo y, si cambió `last_sha.txt`, abre un PR automático.
 
 ## 4) Validaciones rápidas útiles
 
@@ -99,3 +99,13 @@ cat last_sha.txt
 - **401 OpenAI**: verifica `OPENAI_API_KEY`.
 - **SMTP auth failed**: revisa que `EMAIL_PASSWORD` sea App Password de Gmail y que 2FA esté activa.
 - **No llega correo**: revisa spam, dominio permitido y formato de `EMAIL_TO_LIST`.
+
+
+## 6) Validar auto-commit / auto-PR de `last_sha.txt`
+
+1. Ejecuta el workflow con un commit nuevo disponible en el repo monitoreado.
+2. Verifica en logs que aparezca `Detected changes in last_sha.txt`.
+3. Confirma que se creó un PR con título `chore: actualizar last_sha automáticamente`.
+4. Confirma que el PR quedó **Approved** y con **auto-merge** habilitado (o mergeado).
+
+Si no se aprueba/mergea solo, revisa que `GH_TOKEN_CUSTOM` tenga permisos para `contents` y `pull-requests`.

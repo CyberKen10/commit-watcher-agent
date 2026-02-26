@@ -8,6 +8,7 @@ Monitoriza un repositorio público de GitHub y, cuando aparece un commit nuevo, 
 - `scripts/check_and_notify.py`: script principal.
 - `scripts/send_email.py`: helper opcional para probar envío SMTP.
 - `last_sha.txt`: SHA ya procesado para evitar duplicados.
+- Auto-PR: cuando cambia `last_sha.txt`, el workflow crea PR, lo auto-aprueba y habilita auto-merge.
 
 ## SMTP configurado para Gmail
 
@@ -30,7 +31,7 @@ El proyecto ya viene preparado para usar **Gmail SMTP**:
 
 Configura estos *Repository secrets* en GitHub:
 
-- `GH_TOKEN_CUSTOM`
+- `GH_TOKEN_CUSTOM` (recomendado: token con permisos de `contents` y `pull-requests` para crear/aprobar/merge de PR automáticos)
 - `OPENAI_API_KEY`
 - `EMAIL_PASSWORD`  ← App Password de Gmail
 
@@ -62,3 +63,14 @@ python3 scripts/check_and_notify.py
 ## Nota
 
 Si el diff de un commit es demasiado grande, considera recortarlo por tipo de archivo o tamaño antes de enviarlo al modelo.
+
+
+## Flujo automático de actualización de `last_sha.txt`
+
+En cada ejecución del workflow:
+
+1. Se ejecuta el monitor y, si hay commit nuevo, se actualiza `last_sha.txt`.
+2. Si `last_sha.txt` cambió, se crea automáticamente un PR (`bot/update-last-sha`).
+3. El workflow aprueba ese PR y habilita **auto-merge** para que el cambio suba automáticamente a la rama principal.
+
+> Si tu repositorio tiene reglas de protección estrictas, asegúrate de que el token usado en `GH_TOKEN_CUSTOM` pueda aprobar y hacer merge.
