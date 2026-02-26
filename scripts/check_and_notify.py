@@ -10,9 +10,14 @@ OWNER = os.environ.get("TARGET_OWNER")  # dueño del repo público
 REPO = os.environ.get("TARGET_REPO")  # nombre repo público
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN_CUSTOM"]
 OPENAI_KEY = os.environ["OPENAI_API_KEY"]
-EMAIL_USER = os.environ.get("EMAIL_USERNAME")
+
+GMAIL_SMTP_HOST = "smtp.gmail.com"
+GMAIL_SMTP_PORT = 587
+DEFAULT_GMAIL_SENDER = "kendryjavierdelpino@gmail.com"
+
+EMAIL_USER = os.environ.get("EMAIL_USERNAME", DEFAULT_GMAIL_SENDER)
 EMAIL_PASS = os.environ.get("EMAIL_PASSWORD")
-EMAIL_TO = os.environ.get("EMAIL_TO_LIST", "tu@correo.com")  # comma separated
+EMAIL_TO = os.environ.get("EMAIL_TO_LIST", DEFAULT_GMAIL_SENDER)  # comma separated
 
 GITHUB_HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",
@@ -93,8 +98,11 @@ Diff:
 
 
 def send_email(subject, body):
-    if not EMAIL_USER or not EMAIL_PASS:
-        print("No SMTP credentials configured; skipping email.")
+    if not EMAIL_PASS:
+        print(
+            "EMAIL_PASSWORD no está configurado. Para Gmail usa un App Password (16 caracteres) y exporta EMAIL_PASSWORD."
+        )
+        print("Saltando envío de email.")
         return
 
     msg = EmailMessage()
@@ -103,8 +111,7 @@ def send_email(subject, body):
     msg["Subject"] = subject
     msg.set_content(body)
 
-    # SMTP (ejemplo Gmail/SMTP estándar)
-    with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+    with smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT) as smtp:
         smtp.starttls()
         smtp.login(EMAIL_USER, EMAIL_PASS)
         smtp.send_message(msg)
