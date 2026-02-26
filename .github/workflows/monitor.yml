@@ -82,12 +82,6 @@ jobs:
           add-paths: |
             last_sha.txt
 
-      - name: Auto-approve generated PR
-        if: steps.cpr.outputs.pull-request-number != ''
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN_CUSTOM || secrets.GITHUB_TOKEN }}
-        run: gh pr review "${{ steps.cpr.outputs.pull-request-number }}" --approve
-
       - name: Enable auto-merge on generated PR
         if: steps.cpr.outputs.pull-request-number != ''
         env:
