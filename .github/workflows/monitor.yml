@@ -25,12 +25,12 @@ jobs:
 
       - name: Run monitor script
         env:
-          TARGET_OWNER: 'owner_del_repo_publico' # ← editar
-          TARGET_REPO: 'nombre_del_repo_publico' # ← editar
-          GITHUB_TOKEN_CUSTOM: ${{ secrets.GITHUB_TOKEN_CUSTOM }}
+          TARGET_OWNER: 'w3c' # ← editar
+          TARGET_REPO: 'wcag' # ← editar
+          GITHUB_TOKEN_CUSTOM: ${{ secrets.G_TOKEN_CUSTOM }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_TO_LIST: 'tucorreo@ejemplo.com' # o poner en secret
+          EMAIL_TO_LIST: 'kendryjavierdelpino@gmail.com' # o poner en secret
         run: |
           python3 scripts/check_and_notify.py
