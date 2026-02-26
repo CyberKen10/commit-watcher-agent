@@ -4,10 +4,11 @@ on:
   schedule:
     - cron: '*/15 * * * *' # cada 15 minutos (ajusta si quieres)
   workflow_dispatch:
-  
+
 permissions:
-  contents: read
-  
+  contents: write
+  pull-requests: write
+
 jobs:
   check-commit:
     runs-on: ubuntu-latest
@@ -51,3 +52,44 @@ jobs:
           EMAIL_TO_LIST: ${{ secrets.EMAIL_TO_LIST }}
         run: |
           python3 scripts/check_and_notify.py
+
+      - name: Detect last_sha changes
+        id: sha_changes
+        run: |
+          if git diff --quiet -- last_sha.txt; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in last_sha.txt"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Detected changes in last_sha.txt"
+          fi
+
+      - name: Create Pull Request with updated SHA
+        id: cpr
+        if: steps.sha_changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_TOKEN_CUSTOM || secrets.GITHUB_TOKEN }}
+          commit-message: "chore: actualizar last_sha automáticamente"
+          title: "chore: actualizar last_sha automáticamente"
+          body: |
+            Este PR fue generado automáticamente por el workflow de monitoreo.
+
+            - Actualiza `last_sha.txt` con el último commit detectado.
+            - Evita reprocesar commits ya notificados.
+          branch: "bot/update-last-sha"
+          delete-branch: true
+          add-paths: |
+            last_sha.txt
+
+      - name: Auto-approve generated PR
+        if: steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_CUSTOM || secrets.GITHUB_TOKEN }}
+        run: gh pr review "${{ steps.cpr.outputs.pull-request-number }}" --approve
+
+      - name: Enable auto-merge on generated PR
+        if: steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_CUSTOM || secrets.GITHUB_TOKEN }}
+        run: gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --auto --squash
