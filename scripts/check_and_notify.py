@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Monitor a public GitHub repository and send commit summaries by email."""
+
+import os
+import requests
+import smtplib
+from email.message import EmailMessage
+
+OWNER = os.environ.get("TARGET_OWNER")  # dueño del repo público
+REPO = os.environ.get("TARGET_REPO")  # nombre repo público
+GITHUB_TOKEN = os.environ["GITHUB_TOKEN_CUSTOM"]
+OPENAI_KEY = os.environ["OPENAI_API_KEY"]
+EMAIL_USER = os.environ.get("EMAIL_USERNAME")
+EMAIL_PASS = os.environ.get("EMAIL_PASSWORD")
+EMAIL_TO = os.environ.get("EMAIL_TO_LIST", "tu@correo.com")  # comma separated
+
+GITHUB_HEADERS = {
+    "Authorization": f"token {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json",
+}
+
+
+def get_latest_commit():
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/commits"
+    response = requests.get(url, headers=GITHUB_HEADERS, timeout=30)
+    response.raise_for_status()
+    return response.json()[0]  # última entrada
+
+
+def get_commit_diff(sha):
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/commits/{sha}"
+    response = requests.get(url, headers=GITHUB_HEADERS, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    files = data.get("files", [])
+    diff_parts = []
+    for changed_file in files:
+        if "patch" in changed_file:
+            diff_parts.append(f"File: {changed_file['filename']}\n{changed_file['patch']}\n")
+    return "\n".join(diff_parts), data.get("commit", {}).get("message", "")
+
+
+def read_last_sha(path="last_sha.txt"):
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return fh.read().strip()
+    except FileNotFoundError:
+        return ""
+
+
+def write_last_sha(sha, path="last_sha.txt"):
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(sha)
+
+
+def summarize_with_openai(diff_text, commit_message):
+    system = (
+        "Eres un ingeniero senior especializado en revisión de código. "
+        "Responde de forma técnica y concisa."
+    )
+    user_prompt = f"""Analiza el siguiente commit/diff y genera un informe con:
+1) Archivos modificados
+2) Tipo de cambio (feature/fix/refactor/docs/test/breaking)
+3) Resumen técnico de los cambios
+4) Motivo probable del cambio (basado en diff y commit message)
+5) Impacto técnico
+6) Riesgos y recomendaciones
+
+Commit message:
+{commit_message}
+
+Diff:
+{diff_text}
+"""
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": "gpt-4o-mini",  # puedes cambiar a otro modelo disponible
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_prompt},
+        ],
+        "max_tokens": 800,
+        "temperature": 0.2,
+    }
+    response = requests.post(url, headers=headers, json=payload, timeout=120)
+    response.raise_for_status()
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
+
+
+def send_email(subject, body):
+    if not EMAIL_USER or not EMAIL_PASS:
+        print("No SMTP credentials configured; skipping email.")
+        return
+
+    msg = EmailMessage()
+    msg["From"] = EMAIL_USER
+    msg["To"] = EMAIL_TO
+    msg["Subject"] = subject
+    msg.set_content(body)
+
+    # SMTP (ejemplo Gmail/SMTP estándar)
+    with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+        smtp.starttls()
+        smtp.login(EMAIL_USER, EMAIL_PASS)
+        smtp.send_message(msg)
+
+
+def main():
+    if not OWNER or not REPO:
+        raise ValueError("TARGET_OWNER y TARGET_REPO deben estar definidos.")
+
+    latest = get_latest_commit()
+    sha = latest["sha"]
+    commit_message = latest["commit"]["message"]
+    last_sha = read_last_sha()
+
+    if sha == last_sha:
+        print("No hay commits nuevos. SHA igual:", sha)
+        return
+
+    print("Nuevo commit detectado:", sha)
+    diff_text, commit_message = get_commit_diff(sha)
+    if not diff_text:
+        diff_text = "(no hay patch disponible; tal vez sólo cambios binarios o merge)"
+
+    print("Generando resumen con OpenAI...")
+    summary = summarize_with_openai(diff_text, commit_message)
+
+    subject = f"[Commit Watch] {OWNER}/{REPO} {sha[:7]}"
+    body = (
+        f"Repo: {OWNER}/{REPO}\n"
+        f"Commit: {sha}\n"
+        f"Message: {commit_message}\n\n"
+        f"Resumen:\n{summary}"
+    )
+
+    print("Enviando email...")
+    send_email(subject, body)
+
+    # guardar SHA para no procesarlo otra vez
+    write_last_sha(sha)
+    print("Listo. SHA guardado:", sha)
+
+
+if __name__ == "__main__":
+    main()
