@@ -8,7 +8,7 @@ from email.message import EmailMessage
 
 OWNER = os.environ.get("TARGET_OWNER")  # dueño del repo público
 REPO = os.environ.get("TARGET_REPO")  # nombre repo público
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN_CUSTOM"]
+GITHUB_TOKEN = os.environ.get("GH_TOKEN_CUSTOM") or os.environ.get("GITHUB_TOKEN_CUSTOM")
 OPENAI_KEY = os.environ["OPENAI_API_KEY"]
 
 GMAIL_SMTP_HOST = "smtp.gmail.com"
@@ -27,6 +27,8 @@ GITHUB_HEADERS = {
 
 def get_latest_commit():
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/commits"
+    print("TOKEN:", os.environ.get("GITHUB_TOKEN_CUSTOM"))
+    print("GH_TOKEN_CUSTOM:", os.environ.get("GH_TOKEN_CUSTOM"))
     response = requests.get(url, headers=GITHUB_HEADERS, timeout=30)
     response.raise_for_status()
     return response.json()[0]  # última entrada
@@ -34,6 +36,8 @@ def get_latest_commit():
 
 def get_commit_diff(sha):
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/commits/{sha}"
+    print("TOKEN:", os.environ.get("GITHUB_TOKEN_CUSTOM"))
+    print("GH_TOKEN_CUSTOM:", os.environ.get("GH_TOKEN_CUSTOM"))
     response = requests.get(url, headers=GITHUB_HEADERS, timeout=30)
     response.raise_for_status()
     data = response.json()
@@ -91,6 +95,7 @@ Diff:
         "max_tokens": 800,
         "temperature": 0.2,
     }
+    print("OPENAI_API_KEY presente:", bool(os.environ.get("OPENAI_API_KEY")))
     response = requests.post(url, headers=headers, json=payload, timeout=120)
     response.raise_for_status()
     data = response.json()
@@ -98,6 +103,10 @@ Diff:
 
 
 def send_email(subject, body):
+    print("EMAIL_USERNAME presente:", bool(os.environ.get("EMAIL_USERNAME")))
+    print("EMAIL_PASSWORD presente:", bool(os.environ.get("EMAIL_PASSWORD")))
+    print("EMAIL_TO_LIST presente:", bool(os.environ.get("EMAIL_TO_LIST")))
+
     if not EMAIL_PASS:
         print(
             "EMAIL_PASSWORD no está configurado. Para Gmail usa un App Password (16 caracteres) y exporta EMAIL_PASSWORD."
@@ -118,8 +127,15 @@ def send_email(subject, body):
 
 
 def main():
+    print("TARGET_OWNER:", OWNER)
+    print("TARGET_REPO:", REPO)
+    print("GH_TOKEN_CUSTOM presente:", bool(os.environ.get("GH_TOKEN_CUSTOM")))
+    print("GITHUB_TOKEN_CUSTOM presente (legacy):", bool(os.environ.get("GITHUB_TOKEN_CUSTOM")))
+
     if not OWNER or not REPO:
         raise ValueError("TARGET_OWNER y TARGET_REPO deben estar definidos.")
+    if not GITHUB_TOKEN:
+        raise ValueError("GH_TOKEN_CUSTOM (o legado GITHUB_TOKEN_CUSTOM) debe estar definido.")
 
     latest = get_latest_commit()
     sha = latest["sha"]

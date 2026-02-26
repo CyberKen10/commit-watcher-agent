@@ -25,7 +25,7 @@ Configura variables mínimas:
 ```bash
 export TARGET_OWNER="owner_del_repo_publico"
 export TARGET_REPO="nombre_del_repo_publico"
-export GITHUB_TOKEN_CUSTOM="tu_token_github"
+export GH_TOKEN_CUSTOM="tu_token_github"
 export OPENAI_API_KEY="tu_openai_api_key"
 export EMAIL_PASSWORD="tu_app_password_de_gmail"
 # opcional: export EMAIL_USERNAME="kendryjavierdelpino@gmail.com"
@@ -66,7 +66,7 @@ Resultado esperado: llega un correo con el asunto y contenido indicados.
 
 1. Sube los cambios al repositorio.
 2. En GitHub, configura estos **Repository secrets**:
-   - `GITHUB_TOKEN_CUSTOM`
+   - `GH_TOKEN_CUSTOM`
    - `OPENAI_API_KEY`
    - `EMAIL_PASSWORD` (App Password)
 3. Opcionalmente agrega:
@@ -95,7 +95,7 @@ cat last_sha.txt
 
 ## 5) Problemas comunes
 
-- **401/403 GitHub API**: revisa `GITHUB_TOKEN_CUSTOM` y permisos.
+- **401/403 GitHub API**: revisa `GH_TOKEN_CUSTOM` y permisos.
 - **401 OpenAI**: verifica `OPENAI_API_KEY`.
 - **SMTP auth failed**: revisa que `EMAIL_PASSWORD` sea App Password de Gmail y que 2FA esté activa.
 - **No llega correo**: revisa spam, dominio permitido y formato de `EMAIL_TO_LIST`.
